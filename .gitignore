@@ -73,5 +73,5 @@ yarn-error.log
 !.yarn/sdks
 !.yarn/versions
 
-.package-lock.json
-.Podfile.lock
+package-lock.json
+ios/Podfile.lock
