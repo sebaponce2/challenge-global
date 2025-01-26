@@ -12,7 +12,7 @@ const Tab = createBottomTabNavigator();
 
 const TabNavigator = () => {
   return (
-    <Tab.Navigator >
+    <Tab.Navigator>
       <Tab.Screen
         name="ChatList"
         component={ChatListScreen}
@@ -22,7 +22,6 @@ const TabNavigator = () => {
         name="UserProfile"
         component={UserProfileScreen}
         options={{title: 'Perfil'}}
-
       />
     </Tab.Navigator>
   );
@@ -31,20 +30,14 @@ const TabNavigator = () => {
 const AppNavigator = () => {
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{
-        headerStyle: {
-          backgroundColor: '#f4511e',
-        },
-        headerTintColor: '#fff',
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-        animation:"none",
-      }} >
+      <Stack.Navigator
+        screenOptions={{
+          animation: 'none',
+        }}>
         <Stack.Screen
           name="Login"
           component={LoginScreen}
-          options={{headerShown: false, }}
+          options={{headerShown: false}}
         />
         <Stack.Screen
           name="TabNavigator"

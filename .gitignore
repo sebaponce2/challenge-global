@@ -1,10 +1,10 @@
 # OSX
 #
-.DS_Store
+frontend/.DS_Store
 
 # Xcode
 #
-build/
+frontend/build/
 *.pbxuser
 !default.pbxuser
 *.mode1v3
@@ -13,10 +13,10 @@ build/
 !default.mode2v3
 *.perspectivev3
 !default.perspectivev3
-xcuserdata
+frontend/xcuserdata
 *.xccheckout
 *.moved-aside
-DerivedData
+frontend/DerivedData
 *.hmap
 *.ipa
 *.xcuserstate
@@ -24,10 +24,10 @@ DerivedData
 
 # Android/IntelliJ
 #
-build/
-.idea
-.gradle
-local.properties
+frontend/build/
+frontend/.idea
+frontend/.gradle
+frontend/local.properties
 *.iml
 *.hprof
 .cxx/
@@ -36,9 +36,9 @@ local.properties
 
 # node.js
 #
-node_modules/
-npm-debug.log
-yarn-error.log
+frontend/node_modules/
+frontend/npm-debug.log
+frontend/yarn-error.log
 
 # fastlane
 #
@@ -73,5 +73,10 @@ yarn-error.log
 !.yarn/sdks
 !.yarn/versions
 
-package-lock.json
-ios/Podfile.lock
+frontend/package-lock.json
+frontend/ios/Podfile.lock
+
+api/package-lock.json
+api/node_modules/
+
+*.env
