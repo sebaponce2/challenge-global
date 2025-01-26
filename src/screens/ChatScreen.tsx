@@ -1,11 +1,10 @@
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { View, StyleSheet, FlatList, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native"
-import { TextInput, Button, Text, Card } from "react-native-paper"
+import { TextInput, Button, Text, Card, IconButton } from "react-native-paper"
 import { useRoute, type RouteProp } from "@react-navigation/native"
 import { useChatStore, type Message } from "../store/chat.store"
 import { launchImageLibrary } from "react-native-image-picker"
-import Icon from "react-native-ionicons"
 
 type RootStackParamList = {
   ChatScreen: { contactId: string }
@@ -72,11 +71,11 @@ export const ChatScreen = () => {
             <Text>{item.content}</Text>
             {item.attachment && (
               <View style={styles.attachmentContainer}>
-                {item.attachment.type === "image" ? (
-                  <Icon name="image" size={50} color="#000" />
-                ) : (
-                  <Icon name="document" size={50} color="#000" />
-                )}
+                <IconButton
+                  icon={item.attachment.type === "image" ? "image" : "file-document"}
+                  size={40}
+                  iconColor="#000"
+                />
               </View>
             )}
             <Text style={styles.timestamp}>{item.time}</Text>
@@ -103,10 +102,12 @@ export const ChatScreen = () => {
       <View style={styles.inputContainer}>
         {attachment && (
           <View style={styles.attachmentPreview}>
-            <Icon name={attachment.type === "image" ? "image" : "document"} size={40} color="#000" />
-            <TouchableOpacity onPress={() => setAttachment(null)}>
-              <Icon name="close-circle" size={20} color="#000" />
-            </TouchableOpacity>
+            <IconButton
+              icon={attachment.type === "image" ? "image" : "file-document"}
+              size={40}
+              iconColor="#000"
+            />
+            <IconButton icon="close" size={20} iconColor="#000" onPress={() => setAttachment(null)} />
           </View>
         )}
         <TextInput
@@ -115,9 +116,7 @@ export const ChatScreen = () => {
           onChangeText={setMessageText}
           placeholder="Escribe un mensaje..."
         />
-        <TouchableOpacity onPress={handleAttachment}>
-          <Icon name="attach" size={24} color="#000" />
-        </TouchableOpacity>
+        <IconButton icon="paperclip" size={24} iconColor="#000" onPress={handleAttachment} />
         <Button mode="contained" onPress={handleSend}>
           Enviar
         </Button>
@@ -175,4 +174,3 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
 })
-

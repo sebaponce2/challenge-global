@@ -1,5 +1,5 @@
 import type React from 'react';
-import {useState} from 'react';
+import { useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -14,13 +14,13 @@ import {
   Avatar,
   Switch,
   Menu,
+  IconButton,
 } from 'react-native-paper';
-import {launchImageLibrary} from 'react-native-image-picker';
-import {useUserStore, type UserProfile} from '../store/user.store';
-import Icon from 'react-native-ionicons';
+import { launchImageLibrary } from 'react-native-image-picker';
+import { useUserStore, type UserProfile } from '../store/user.store';
 
 export const UserProfileScreen = () => {
-  const {profile, updateProfile, setStatus} = useUserStore();
+  const { profile, updateProfile, setStatus } = useUserStore();
   const [isEditing, setIsEditing] = useState(false);
   const [tempProfile, setTempProfile] = useState<UserProfile>(profile);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -33,17 +33,17 @@ export const UserProfileScreen = () => {
   };
 
   const handleAvatarChange = () => {
-    launchImageLibrary({mediaType: 'photo'}, response => {
+    launchImageLibrary({ mediaType: 'photo' }, (response) => {
       if (response.assets && response.assets.length > 0) {
         const newAvatar = response.assets[0].uri;
-        setTempProfile({...tempProfile, avatar: newAvatar || null});
+        setTempProfile({ ...tempProfile, avatar: newAvatar || null });
       }
     });
   };
 
   const renderAvatar = () => {
     if (tempProfile.avatar) {
-      return <Image source={{uri: tempProfile.avatar}} style={styles.avatar} />;
+      return <Image source={{ uri: tempProfile.avatar }} style={styles.avatar} />;
     }
     return (
       <Avatar.Text
@@ -60,7 +60,13 @@ export const UserProfileScreen = () => {
           {renderAvatar()}
           {isEditing && (
             <View style={styles.editAvatarIcon}>
-              <Icon name="camera" size={24} color="#fff" />
+              <IconButton
+                icon="camera"
+                size={24}
+                iconColor="#fff"
+                style={styles.cameraIcon}
+                onPress={handleAvatarChange}
+              />
             </View>
           )}
         </TouchableOpacity>
@@ -70,8 +76,8 @@ export const UserProfileScreen = () => {
         <TextInput
           label="Nombre de usuario"
           value={tempProfile.username}
-          onChangeText={text =>
-            setTempProfile({...tempProfile, username: text})
+          onChangeText={(text) =>
+            setTempProfile({ ...tempProfile, username: text })
           }
           disabled={!isEditing}
           style={styles.input}
@@ -80,7 +86,7 @@ export const UserProfileScreen = () => {
         <TextInput
           label="Email"
           value={tempProfile.email}
-          onChangeText={text => setTempProfile({...tempProfile, email: text})}
+          onChangeText={(text) => setTempProfile({ ...tempProfile, email: text })}
           disabled={!isEditing}
           style={styles.input}
         />
@@ -95,11 +101,12 @@ export const UserProfileScreen = () => {
                 {tempProfile.status.charAt(0).toUpperCase() +
                   tempProfile.status.slice(1)}
               </Button>
-            }>
+            }
+          >
             <Menu.Item
               onPress={() => {
                 setStatus('online');
-                setTempProfile({...tempProfile, status: 'online'});
+                setTempProfile({ ...tempProfile, status: 'online' });
                 setMenuVisible(false);
               }}
               title="Online"
@@ -107,7 +114,7 @@ export const UserProfileScreen = () => {
             <Menu.Item
               onPress={() => {
                 setStatus('offline');
-                setTempProfile({...tempProfile, status: 'offline'});
+                setTempProfile({ ...tempProfile, status: 'offline' });
                 setMenuVisible(false);
               }}
               title="Offline"
@@ -115,7 +122,7 @@ export const UserProfileScreen = () => {
             <Menu.Item
               onPress={() => {
                 setStatus('away');
-                setTempProfile({...tempProfile, status: 'away'});
+                setTempProfile({ ...tempProfile, status: 'away' });
                 setMenuVisible(false);
               }}
               title="Away"
@@ -126,7 +133,8 @@ export const UserProfileScreen = () => {
         <Button
           mode="contained"
           onPress={handleEditToggle}
-          style={styles.editButton}>
+          style={styles.editButton}
+        >
           {isEditing ? 'Guardar cambios' : 'Editar perfil'}
         </Button>
       </View>
@@ -155,7 +163,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: '#007AFF',
     borderRadius: 15,
-    padding: 5,
+    padding: 2,
+  },
+  cameraIcon: {
+    backgroundColor: '#007AFF',
   },
   content: {
     padding: 20,
