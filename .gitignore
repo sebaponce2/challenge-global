@@ -24,7 +24,11 @@ frontend/DerivedData
 
 # Android/IntelliJ
 #
-frontend/build/
+frontend/android/.gradle/
+frontend/android/build
+frontend/android/app/build/
+frontend/app/build/
+frontend/ios/build/
 frontend/.idea
 frontend/.gradle
 frontend/local.properties
@@ -78,5 +82,5 @@ frontend/ios/Podfile.lock
 
 api/package-lock.json
 api/node_modules/
-
+.idea
 *.env
