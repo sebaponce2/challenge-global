@@ -9,7 +9,7 @@ import {useAuthStore} from '../store/auth.store';
 
 type RootStackParamList = {
   ChatList: undefined;
-  Chat: {chatId: number, contact: {name: string, lastName: string}};
+  Chat: {chatId: number; contact: {name: string; lastName: string}};
 };
 
 type ChatListScreenNavigationProp = StackNavigationProp<
@@ -30,15 +30,31 @@ export const ChatListScreen = () => {
     navigation.navigate('Chat', {chatId, contact});
   };
 
-  const renderChatItem = ({item}: {item: ChatList}) => (
-    <List.Item
-      title={`${item.contact.name} ${item.contact.lastName}`}
-      description={item.lastMessage}
-      left={props => <List.Icon {...props} icon="account" />}
-      right={() => <Text style={styles.time}>{item.lastMessageTime}</Text>}
-      onPress={() => handleChatPress(item.id, item.contact)}
-    />
-  );
+  const renderChatItem = ({item}: {item: ChatList}) => {
+    let contentData;
+    let isJsonContent = false;
+
+    try {
+      contentData = JSON.parse(item.lastMessage);
+      isJsonContent = !!contentData.type && !!contentData.content;
+    } catch (e) {
+      contentData = item.lastMessage;
+    }
+    return (
+      <List.Item
+        title={`${item.contact.name} ${item.contact.lastName}`}
+        description={
+          contentData.type &&
+          (contentData.type === 'image' || contentData.type === 'file')
+            ? contentData.type
+            : contentData
+        }
+        left={props => <List.Icon {...props} icon="account" />}
+        right={() => <Text style={styles.time}>{item.lastMessageTime}</Text>}
+        onPress={() => handleChatPress(item.id, item.contact)}
+      />
+    );
+  };
 
   return (
     <View style={styles.container}>

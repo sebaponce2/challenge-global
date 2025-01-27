@@ -11,6 +11,7 @@ export interface Message {
   sender: string;
   content: string;
   time: string;
+  attachmentName?: string;
 }
 
 export interface Chat {

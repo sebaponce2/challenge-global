@@ -6,6 +6,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import {TextInput, Button, Text, Card, IconButton} from 'react-native-paper';
 import {
@@ -35,16 +36,18 @@ export const ChatScreen = () => {
   const [messageText, setMessageText] = useState('');
   const [attachment, setAttachment] = useState<{
     type: 'image' | 'file';
-    url: string;
+    content: string;
+    name: string;
+    text: string;
   } | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const navigation = useNavigation();
   const socketRef = useRef<ReturnType<typeof io> | null>(null);
 
-  useFocusEffect(() => {
+  useEffect(() => {
     getMessages(chatId, user!.id);
     setHeader();
-  });
+  }, []);
 
   useEffect(() => {
     handleSocket();
@@ -96,17 +99,17 @@ export const ChatScreen = () => {
       };
 
       if (attachment) {
-        body.content += `\n[${attachment.type}]\n${attachment.url}`;
+        body.content = JSON.stringify(attachment); // Convertimos el adjunto a JSON
       }
 
       postMessage(body);
 
-      if (messageText.trim().length > 0) {
+      if (messageText.trim().length > 0 || attachment) {
         socketRef.current?.emit('message', {
           chatId,
           message: {
             sender: user!.name,
-            content: messageText.trim(),
+            content: body.content,
             time: new Date().toLocaleTimeString([], {
               hour: 'numeric',
               minute: 'numeric',
@@ -127,12 +130,14 @@ export const ChatScreen = () => {
 
         if (asset.uri) {
           try {
-            // Convierte el archivo a Base64
             const base64 = await RNFS.readFile(asset.uri, 'base64');
             setAttachment({
+              content: base64,
               type: asset.type?.startsWith('image/') ? 'image' : 'file',
-              url: base64, // Guarda el contenido Base64 aquí
+              name: asset.fileName || 'Archivo adjunto',
+              text: messageText.trim(),
             });
+            console.log('messageText:', messageText);
           } catch (error) {
             console.error('Error al convertir a Base64:', error);
           }
@@ -144,21 +149,14 @@ export const ChatScreen = () => {
   const renderMessage = ({item}: {item: Message}) => {
     const isCurrentUser = item.sender === 'You';
 
-    // Separar el contenido de los adjuntos (si están en el texto)
-    const contentParts = item.content.split('\n'); // Dividimos por líneas
-    const textContent = contentParts.filter(line => !line.startsWith('['));
-    const attachmentLine = contentParts.find(line => line.startsWith('['));
+    let contentData;
+    let isJsonContent = false;
 
-    // Determinar tipo de adjunto
-    let attachmentType = null;
-    let attachmentUrl = null;
-
-    if (attachmentLine) {
-      const match = attachmentLine.match(/\[(image|file)]\n(.+)/); // Busca el tipo y la URL
-      if (match) {
-        attachmentType = match[1]; // 'image' o 'file'
-        attachmentUrl = match[2]; // URL o Base64
-      }
+    try {
+      contentData = JSON.parse(item.content);
+      isJsonContent = !!contentData.type && !!contentData.content;
+    } catch (e) {
+      contentData = item.content;
     }
 
     return (
@@ -170,11 +168,7 @@ export const ChatScreen = () => {
         <Card
           style={isCurrentUser ? styles.currentUserCard : styles.otherUserCard}>
           <Card.Content
-            style={{
-              paddingBottom: 8,
-              paddingTop: 8,
-              paddingHorizontal: 12,
-            }}>
+            style={{paddingBottom: 8, paddingTop: 8, paddingHorizontal: 12}}>
             <Text
               style={[
                 {color: 'white', marginBottom: 4, fontWeight: 'bold'},
@@ -185,22 +179,43 @@ export const ChatScreen = () => {
               {item.sender}
             </Text>
 
-            {/* Mostrar texto del mensaje si existe */}
-            {textContent.length > 0 && (
-              <Text style={{color: 'white'}}>{textContent.join('\n')}</Text>
+            {/* Renderizamos contenido si es texto común */}
+            {!isJsonContent && (
+              <Text style={{color: 'white'}}>{contentData}</Text>
             )}
 
-            {attachmentType && attachmentUrl && (
-              <View style={styles.attachmentContainer}>
-                <IconButton
-                  icon={attachmentType === 'image' ? 'image' : 'file-document'}
-                  size={40}
-                  iconColor="#000"
-                  onPress={() => {
-                    // Agregar lógica para abrir/ver archivo adjunto
-                    console.log('Abrir adjunto:', attachmentUrl);
+            {/* Renderizamos contenido si es JSON */}
+            {isJsonContent && contentData.type === 'image' && (
+              <>
+                <Image
+                  source={{
+                    uri: `data:image/jpeg;base64,${contentData.content}`,
+                  }}
+                  style={{
+                    width: 150,
+                    height: 150,
+                    marginTop: 10,
+                    borderRadius: 8,
                   }}
                 />
+                {contentData.text?.trim() !== '' && (
+                  <Text style={{color: 'white', marginTop: 4}}>
+                    {contentData?.text?.trim()}
+                  </Text>
+                )}
+              </>
+            )}
+            {isJsonContent && contentData.type === 'file' && (
+              <View style={styles.attachmentContainer}>
+                <IconButton
+                  icon="file-document"
+                  size={40}
+                  iconColor="#000"
+                  onPress={() =>
+                    console.log('Abrir archivo:', contentData.content)
+                  }
+                />
+                <Text style={{color: '#000'}}>{contentData.name}</Text>
               </View>
             )}
 
@@ -226,7 +241,7 @@ export const ChatScreen = () => {
         }
       />
       <View style={styles.inputContainer}>
-        {attachment && (
+        {attachment?.type && (
           <View style={styles.attachmentPreview}>
             <IconButton
               icon={attachment.type === 'image' ? 'image' : 'file-document'}
@@ -238,7 +253,12 @@ export const ChatScreen = () => {
         <TextInput
           style={styles.input}
           value={messageText}
-          onChangeText={setMessageText}
+          onChangeText={e => {
+            if (attachment?.content) {
+              setAttachment({...attachment, text: e});
+            }
+            setMessageText(e);
+          }}
           placeholder="Escribe un mensaje..."
         />
         <IconButton
