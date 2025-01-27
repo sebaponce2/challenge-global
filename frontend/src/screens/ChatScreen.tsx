@@ -7,10 +7,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  Modal,
+  TouchableOpacity,
 } from 'react-native';
 import {TextInput, Button, Text, Card, IconButton} from 'react-native-paper';
 import {
-  useFocusEffect,
   useNavigation,
   useRoute,
   type RouteProp,
@@ -21,6 +22,7 @@ import {useAuthStore} from '../store/auth.store';
 import ChatHeader from '../components/ChatHeader';
 import RNFS from 'react-native-fs';
 import {io} from 'socket.io-client';
+import DocumentPicker from 'react-native-document-picker';
 
 type RootStackParamList = {
   ChatScreen: {chatId: number; contact: {name: string; lastName: string}};
@@ -40,6 +42,7 @@ export const ChatScreen = () => {
     name: string;
     text: string;
   } | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const navigation = useNavigation();
   const socketRef = useRef<ReturnType<typeof io> | null>(null);
@@ -102,6 +105,8 @@ export const ChatScreen = () => {
         body.content = JSON.stringify(attachment); // Convertimos el adjunto a JSON
       }
 
+      console.log('body:', body);
+
       postMessage(body);
 
       if (messageText.trim().length > 0 || attachment) {
@@ -123,27 +128,54 @@ export const ChatScreen = () => {
     }
   };
 
-  const handleAttachment = async () => {
-    launchImageLibrary({mediaType: 'mixed'}, async response => {
-      if (response.assets && response.assets.length > 0) {
-        const asset = response.assets[0];
+  const handleAttachment = async (type: 'image' | 'file') => {
+    setModalVisible(false);
 
-        if (asset.uri) {
-          try {
-            const base64 = await RNFS.readFile(asset.uri, 'base64');
-            setAttachment({
-              content: base64,
-              type: asset.type?.startsWith('image/') ? 'image' : 'file',
-              name: asset.fileName || 'Archivo adjunto',
-              text: messageText.trim(),
-            });
-            console.log('messageText:', messageText);
-          } catch (error) {
-            console.error('Error al convertir a Base64:', error);
+    if (type === 'image') {
+      launchImageLibrary({mediaType: 'photo'}, async response => {
+        if (response.assets && response.assets.length > 0) {
+          const asset = response.assets[0];
+
+          if (asset.uri) {
+            try {
+              const base64 = await RNFS.readFile(asset.uri, 'base64');
+              setAttachment({
+                content: base64,
+                type: 'image',
+                name: asset.fileName || 'Imagen adjunta',
+                text: messageText.trim(),
+              });
+              console.log('messageText:', messageText);
+            } catch (error) {
+              console.error('Error al convertir a Base64:', error);
+            }
           }
         }
+      });
+    } else if (type === 'file') {
+      try {
+        const res = await DocumentPicker.pick({
+          type: [DocumentPicker.types.allFiles], // Puedes especificar otros tipos si lo deseas
+        });
+
+        if (res && res[0]) {
+          const file = res[0];
+          const base64File = await RNFS.readFile(file.uri, 'base64');
+          setAttachment({
+            content: base64File,
+            type: 'file',
+            name: file.name || 'Attached file',
+            text: messageText.trim(),
+          });
+        }
+      } catch (error) {
+        if (DocumentPicker.isCancel(error)) {
+          console.log('Document selection was cancelled');
+        } else {
+          console.log('Unknown error: ', error);
+        }
       }
-    });
+    }
   };
 
   const renderMessage = ({item}: {item: Message}) => {
@@ -215,10 +247,13 @@ export const ChatScreen = () => {
                     console.log('Abrir archivo:', contentData.content)
                   }
                 />
-                <Text style={{color: '#000'}}>{contentData.name}</Text>
+                {contentData.text?.trim() !== '' && (
+                  <Text style={{color: 'white', marginTop: 4}}>
+                    {contentData?.text?.trim()}
+                  </Text>
+                )}
               </View>
             )}
-
             <Text style={styles.timestamp}>{item.time}</Text>
           </Card.Content>
         </Card>
@@ -265,7 +300,7 @@ export const ChatScreen = () => {
           icon="paperclip"
           size={24}
           iconColor="#000"
-          onPress={handleAttachment}
+          onPress={() => setModalVisible(true)}
         />
         <Button
           style={{backgroundColor: '#6750a4'}}
@@ -273,6 +308,26 @@ export const ChatScreen = () => {
           onPress={handleSend}>
           Enviar
         </Button>
+        {/* Modal para selección de archivo o imagen */}
+        <Modal
+          transparent={true}
+          visible={modalVisible}
+          animationType="fade"
+          onRequestClose={() => setModalVisible(false)}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <TouchableOpacity onPress={() => handleAttachment('image')}>
+                <Text style={styles.modalOption}>Seleccionar Imagen</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleAttachment('file')}>
+                <Text style={styles.modalOption}>Seleccionar Archivo</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Text style={styles.modalOption}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     </KeyboardAvoidingView>
   );
@@ -282,7 +337,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    marginTop: 5,
   },
   title: {
     fontSize: 20,
@@ -344,5 +398,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginRight: 10,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+  },
+  modalOption: {
+    fontSize: 18,
+    paddingVertical: 10,
   },
 });
