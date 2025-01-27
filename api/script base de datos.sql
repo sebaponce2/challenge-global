@@ -11,14 +11,14 @@ CREATE TABLE profiles (
     email VARCHAR(255) NOT NULL,
     date_of_birth TIMESTAMP,
     phone VARCHAR(20),
-    photo VARCHAR(255),
+    photo TEXT,
     last_seen TIMESTAMP
 );
 
 CREATE TABLE chats (
     id SERIAL PRIMARY KEY,
-    first_user INTEGER REFERENCES profiles (id),
-    second_user INTEGER REFERENCES profiles (id)
+    first_user_id INTEGER REFERENCES profiles (id) NOT NULL,
+    second_user_id INTEGER REFERENCES profiles (id) NOT NULL
 );
 
 CREATE TABLE messages (
@@ -39,7 +39,7 @@ INSERT INTO profiles (status_id, name, last_name, email, date_of_birth, phone, p
 (1, 'Maria', 'Lopez', 'maria.lopez@gmail.com', NOW(), '123456781', NULL, NOW()),
 (2, 'Peter', 'Sanchez', 'peter.sanchez@gmail.com', NOW(), '123456782', NULL, NOW());
 
-INSERT INTO chats (first_user, second_user) VALUES
+INSERT INTO chats (first_user_id, second_user_id) VALUES
 (1,2),
 (1,3),
 (1,4);
