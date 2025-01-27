@@ -93,6 +93,7 @@ npm run dev
 
 - **Email:** peter.sanchez@gmail.com  
   **Contraseña:** Cualquiera que cumpla con:
+  - 8 caracteres
   - Al menos 1 mayúscula
   - Al menos 1 minúscula
   - Al menos 1 número
