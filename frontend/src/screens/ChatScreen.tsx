@@ -105,8 +105,6 @@ export const ChatScreen = () => {
         body.content = JSON.stringify(attachment); // Convertimos el adjunto a JSON
       }
 
-      console.log('body:', body);
-
       postMessage(body);
 
       if (messageText.trim().length > 0 || attachment) {
@@ -145,7 +143,6 @@ export const ChatScreen = () => {
                 name: asset.fileName || 'Imagen adjunta',
                 text: messageText.trim(),
               });
-              console.log('messageText:', messageText);
             } catch (error) {
               console.error('Error al convertir a Base64:', error);
             }
@@ -243,9 +240,7 @@ export const ChatScreen = () => {
                   icon="file-document"
                   size={40}
                   iconColor="#000"
-                  onPress={() =>
-                    console.log('Abrir archivo:', contentData.content)
-                  }
+                  onPress={() => {}}
                 />
                 {contentData.text?.trim() !== '' && (
                   <Text style={{color: 'white', marginTop: 4}}>

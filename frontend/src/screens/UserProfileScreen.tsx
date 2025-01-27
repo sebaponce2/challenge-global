@@ -28,8 +28,6 @@ export const UserProfileScreen = () => {
         try {
           const base64Image = await RNFS.readFile(uri!, 'base64');
           setBody({ ...body!, photo: `data:image/jpeg;base64,${base64Image}` });
-          console.log('photo:', base64Image);
-          
         } catch (error) {
           console.error('Error al convertir la imagen a base64:', error);
         }

@@ -2,7 +2,7 @@ import type React from 'react';
 import {useEffect} from 'react';
 import {View, StyleSheet, FlatList} from 'react-native';
 import {List, Text, Divider} from 'react-native-paper';
-import {useNavigation} from '@react-navigation/native';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import type {StackNavigationProp} from '@react-navigation/stack';
 import {useChatListStore} from '../store/chatList.store';
 import {useAuthStore} from '../store/auth.store';
@@ -22,9 +22,9 @@ export const ChatListScreen = () => {
   const {getChats, chats} = useChatListStore();
   const {user} = useAuthStore();
 
-  useEffect(() => {
+  useFocusEffect(() => {
     getChats(user!.id);
-  }, []);
+  });
 
   const handleChatPress = (chatId: number, contact: any) => {
     navigation.navigate('Chat', {chatId, contact});
