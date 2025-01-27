@@ -10,3 +10,14 @@ export const getChatListClient = async (userId: number): Promise<ChatList[]> => 
     throw error;
   }
 };
+
+export const getChatMessagesClient = async (chatId: number, userId: number): Promise<SpecificChat> => {
+  try {
+    const {data} = await client.get('/getChatMessages', {
+      params: {chatId, userId},
+    });
+    return data;
+  } catch (error) {
+    throw error;
+  }
+}

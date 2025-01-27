@@ -6,6 +6,8 @@ import {LoginScreen} from '../screens/LoginScreen';
 import {ChatListScreen} from '../screens/ChatListScreen';
 import {ChatScreen} from '../screens/ChatScreen';
 import {UserProfileScreen} from '../screens/UserProfileScreen';
+import {ArrowIconHeader} from '../components/ArrowIconHeader';
+import {Text} from 'react-native-paper';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -44,7 +46,31 @@ const AppNavigator = () => {
           component={TabNavigator}
           options={{headerShown: false}}
         />
-        <Stack.Screen name="Chat" component={ChatScreen} />
+        <Stack.Screen
+          name="Chat"
+          component={ChatScreen}
+          options={({navigation, route}) => ({
+            headerStyle: {
+              backgroundColor: '#6750a4',
+            },
+            headerTitle: () => (
+              <Text
+                style={{
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: 17,
+                }}>{`${route.params.contact?.name} ${route.params.contact?.lastName}`}</Text>
+            ),
+            headerTitleAlign: 'center',
+            headerLeft: () => (
+              <ArrowIconHeader
+                onPress={() => {
+                  navigation.goBack();
+                }}
+              />
+            ),
+          })}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

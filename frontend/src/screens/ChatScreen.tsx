@@ -1,5 +1,5 @@
 import type React from 'react';
-import {useState, useEffect, useRef} from 'react';
+import {useState, useRef, useEffect} from 'react';
 import {
   View,
   StyleSheet,
@@ -11,19 +11,19 @@ import {TextInput, Button, Text, Card, IconButton} from 'react-native-paper';
 import {useRoute, type RouteProp} from '@react-navigation/native';
 import {useChatStore, type Message} from '../store/chat.store';
 import {launchImageLibrary} from 'react-native-image-picker';
+import {useAuthStore} from '../store/auth.store';
 
 type RootStackParamList = {
-  ChatScreen: {contactId: string};
+  ChatScreen: {chatId: number; contact: {name: string; lastName: string}};
 };
 
 type ChatScreenRouteProp = RouteProp<RootStackParamList, 'ChatScreen'>;
 
 export const ChatScreen = () => {
   const route = useRoute<ChatScreenRouteProp>();
-  const {contactId} = route.params;
-  const {specificChats, chats, addMessage} = useChatStore();
-  const chat = specificChats.find(c => c.contactId === contactId);
-  const contactInfo = chats.find(c => c.contact.id === contactId)?.contact;
+  const {chatId} = route.params;
+  const {chat, getMessages, addMessage} = useChatStore();
+  const {user} = useAuthStore();
   const [messageText, setMessageText] = useState('');
   const [attachment, setAttachment] = useState<{
     type: 'image' | 'file';
@@ -32,18 +32,22 @@ export const ChatScreen = () => {
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
-    // Simular recepción de mensajes cada 10 segundos
-    const interval = setInterval(() => {
-      const newMessage: Message = {
-        sender: contactInfo?.name || '',
-        content: `Mensaje automático ${Date.now()}`,
-        time: new Date().toLocaleTimeString(),
-      };
-      addMessage(contactId, newMessage);
-    }, 10000);
+    getMessages(chatId, user!.id);
+  }, []);
 
-    return () => clearInterval(interval);
-  }, [contactId, addMessage, contactInfo]);
+  // useEffect(() => {
+  //   // Simular recepción de mensajes cada 10 segundos
+  //   // const interval = setInterval(() => {
+  //   //   const newMessage: Message = {
+  //   //     sender: contactInfo?.name || '',
+  //   //     content: `Mensaje automático ${Date.now()}`,
+  //   //     time: new Date().toLocaleTimeString(),
+  //   //   };
+  //   //   addMessage(contactId, newMessage);
+  //   // }, 10000);
+
+  //   return () => clearInterval(interval);
+  // }, [contactId, addMessage, contactInfo]);
 
   const handleSend = () => {
     if (messageText.trim() || attachment) {
@@ -53,7 +57,7 @@ export const ChatScreen = () => {
         time: new Date().toLocaleTimeString(),
         attachment: attachment || undefined,
       };
-      addMessage(contactId, newMessage);
+      // addMessage(contactId, newMessage);
       setMessageText('');
       setAttachment(null);
     }
@@ -79,9 +83,10 @@ export const ChatScreen = () => {
           styles.messageContainer,
           isCurrentUser ? styles.currentUser : styles.otherUser,
         ]}>
-        <Card style={styles.messageCard}>
+        <Card
+          style={isCurrentUser ? styles.currentUserCard : styles.otherUserCard}>
           <Card.Content>
-            <Text>{item.content}</Text>
+            <Text style={{color: 'white'}}>{item.content}</Text>
             {item.attachment && (
               <View style={styles.attachmentContainer}>
                 <IconButton
@@ -105,10 +110,6 @@ export const ChatScreen = () => {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
-      <Text
-        style={
-          styles.title
-        }>{`${contactInfo?.name} ${contactInfo?.lastName}`}</Text>
       <FlatList
         ref={flatListRef}
         data={chat?.messages}
@@ -140,7 +141,10 @@ export const ChatScreen = () => {
           iconColor="#000"
           onPress={handleAttachment}
         />
-        <Button mode="contained" onPress={handleSend}>
+        <Button
+          style={{backgroundColor: '#6750a4'}}
+          mode="contained"
+          onPress={handleSend}>
           Enviar
         </Button>
       </View>
@@ -151,7 +155,8 @@ export const ChatScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
+    marginTop: 5,
   },
   title: {
     fontSize: 20,
@@ -165,16 +170,32 @@ const styles = StyleSheet.create({
   },
   currentUser: {
     alignSelf: 'flex-end',
+    marginRight: 10,
   },
   otherUser: {
     alignSelf: 'flex-start',
+    marginLeft: 10,
+  },
+  currentUserCard: {
+    borderTopRightRadius: 0,
+    borderTopLeftRadius: 15,
+    borderBottomRightRadius: 15,
+    borderBottomLeftRadius: 15,
+    backgroundColor: '#6750a4',
+  },
+  otherUserCard: {
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 15,
+    borderBottomRightRadius: 15,
+    borderBottomLeftRadius: 15,
+    backgroundColor: '#2e373d',
   },
   messageCard: {
     borderRadius: 20,
   },
   timestamp: {
     fontSize: 10,
-    color: 'gray',
+    color: 'white',
     alignSelf: 'flex-end',
   },
   inputContainer: {

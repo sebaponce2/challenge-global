@@ -21,5 +21,5 @@ interface SpecificChatMessage {
 
 interface SpecificChat {
   contactId: number;
-  messages?: SpecificChatMessage;
+  messages?: SpecificChatMessage[] | [];
 }

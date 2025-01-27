@@ -86,3 +86,59 @@ export const getChatList = async (req, res) => {
     });
   }
 };
+
+export const getChatMessages = async (req, res) => {
+  const { chatId, userId } = req.query;
+
+  try {
+    const messages = await Message.findAll({
+      where: {
+        chat_id: chatId,
+      },
+      order: [["time", "ASC"]],
+      include: [
+        {
+          model: Profile,
+          as: "sender", 
+          attributes: ["id", "name", "last_name"],
+        },
+      ],
+    });
+
+    const chat = await Chat.findOne({
+      where: { id: chatId },
+      attributes: ["first_user_id", "second_user_id"],
+    });
+
+    const contactId =
+      chat.first_user_id === Number(userId)
+        ? chat.second_user_id
+        : chat.first_user_id;
+
+    const formattedMessages = messages.map((message) => ({
+      sender:
+        message.sender.id === Number(userId)
+          ? "You"
+          : message.sender.name,
+      content: message.content,
+      time: message.time.toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "numeric",
+      }),
+    }));
+
+    const response = {
+      contactId: contactId.toString(),
+      messages: formattedMessages,
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.log("error:", error);
+
+    res.status(500).json({
+      message: "Error al recuperar los mensajes",
+      error,
+    });
+  }
+};

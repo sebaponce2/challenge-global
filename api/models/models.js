@@ -144,8 +144,9 @@ export const Message = sequelize.define(
 
 Profile.belongsTo(Status, { foreignKey: "status_id" });
 
-Chat.belongsTo(Profile, { foreignKey: "first_user_id" });
-Chat.belongsTo(Profile, { foreignKey: "second_user_id" });
+Chat.belongsTo(Profile, { foreignKey: "first_user_id", as: 'firstUser' }); // Alias para el primer usuario
+Chat.belongsTo(Profile, { foreignKey: "second_user_id", as: 'secondUser' }); // Alias para el segundo usuario
 
 Message.belongsTo(Chat, { foreignKey: "chat_id" });
 Message.belongsTo(Profile, { foreignKey: "sender_id" });
+Message.belongsTo(Profile, { foreignKey: "sender_id", as: "sender" });

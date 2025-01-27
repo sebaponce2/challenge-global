@@ -9,7 +9,7 @@ import {useAuthStore} from '../store/auth.store';
 
 type RootStackParamList = {
   ChatList: undefined;
-  Chat: {chatId: number};
+  Chat: {chatId: number, contact: {name: string, lastName: string}};
 };
 
 type ChatListScreenNavigationProp = StackNavigationProp<
@@ -26,8 +26,8 @@ export const ChatListScreen = () => {
     getChats(user!.id);
   }, []);
 
-  const handleChatPress = (chatId: number) => {
-    navigation.navigate('Chat', {chatId});
+  const handleChatPress = (chatId: number, contact: any) => {
+    navigation.navigate('Chat', {chatId, contact});
   };
 
   const renderChatItem = ({item}: {item: ChatList}) => (
@@ -36,7 +36,7 @@ export const ChatListScreen = () => {
       description={item.lastMessage}
       left={props => <List.Icon {...props} icon="account" />}
       right={() => <Text style={styles.time}>{item.lastMessageTime}</Text>}
-      onPress={() => handleChatPress(item.id)}
+      onPress={() => handleChatPress(item.id, item.contact)}
     />
   );
 
