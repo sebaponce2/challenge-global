@@ -8,6 +8,7 @@ import {ChatScreen} from '../screens/ChatScreen';
 import {UserProfileScreen} from '../screens/UserProfileScreen';
 import {ArrowIconHeader} from '../components/ArrowIconHeader';
 import {Text} from 'react-native-paper';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -18,12 +19,24 @@ const TabNavigator = () => {
       <Tab.Screen
         name="ChatList"
         component={ChatListScreen}
-        options={{title: 'Chats'}}
+        options={{
+          title: 'Chats',
+          tabBarIcon: ({color, size}) => (
+            <Icon name="chat" size={size} color={color} />
+          ),
+          tabBarActiveTintColor: '#6750a4',
+        }}
       />
       <Tab.Screen
         name="UserProfile"
         component={UserProfileScreen}
-        options={{title: 'Perfil'}}
+        options={{
+          title: 'Perfil',
+          tabBarIcon: ({color, size}) => (
+            <Icon name="person" size={size} color={color} />
+          ),
+          tabBarActiveTintColor: '#6750a4',
+        }}
       />
     </Tab.Navigator>
   );
