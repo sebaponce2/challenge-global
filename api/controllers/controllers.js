@@ -153,3 +153,20 @@ export const getChatMessages = async (req, res) => {
     });
   }
 };
+
+export const createNewMessage = async (req, res) => {
+  const { chatId, senderId, content } = req.body;
+
+  try {
+    const message = await Message.create({
+      chat_id: chatId,
+      sender_id: senderId,
+      content,
+      time: new Date(),
+    });
+
+    res.status(201).json(message);
+  } catch (error) {
+    res.status(500).json({ message: "Error al crear el mensaje", error });
+  }
+};

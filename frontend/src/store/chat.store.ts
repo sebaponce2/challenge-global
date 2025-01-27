@@ -1,5 +1,5 @@
 import {create} from 'zustand';
-import {getChatMessagesClient} from '../services/chat';
+import {createNewMessageClient, getChatMessagesClient} from '../services/chat';
 
 interface Contact {
   name: string;
@@ -11,10 +11,6 @@ export interface Message {
   sender: string;
   content: string;
   time: string;
-  attachment?: {
-    type: 'image' | 'file';
-    url: string;
-  };
 }
 
 export interface Chat {
@@ -27,10 +23,11 @@ export interface Chat {
 interface ChatState {
   chat: SpecificChat | null;
   getMessages: (chatId: number, userId: number) => void;
-  addMessage: (contactId: string, message: Message) => void;
+  postMessage: (body: Message) => void;
+  updateChat: (received: any) => void;
 }
 
-export const useChatStore = create<ChatState>(set => ({
+export const useChatStore = create<ChatState>((set, get) => ({
   chat: null,
   async getMessages(chatId, userId) {
     try {
@@ -42,5 +39,38 @@ export const useChatStore = create<ChatState>(set => ({
       console.log('Hubo un error al obtener los mensajes:', error);
     }
   },
-  addMessage: (contactId, message) => {},
+  async postMessage(body: any) {
+    try {
+      await createNewMessageClient(body);
+      set({
+        chat: {
+          ...get().chat!,
+          messages: [
+            ...(get().chat?.messages || []),
+            {
+              sender: 'You',
+              content: body.content,
+              time: new Date().toLocaleTimeString([], {
+                hour: "numeric",
+                minute: "numeric",
+              }),
+            },
+          ],
+        }
+      })
+    } catch (error) {
+      console.log('Hubo un error al enviar el mensaje:', error);
+    }
+  },
+  updateChat(received) {
+    set({
+      chat: {
+        ...get().chat!,
+        messages: [
+          ...(get().chat?.messages || []),
+          received.message
+        ],
+      },
+    });
+  }
 }));

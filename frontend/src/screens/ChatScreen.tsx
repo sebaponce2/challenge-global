@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import {TextInput, Button, Text, Card, IconButton} from 'react-native-paper';
 import {
+  useFocusEffect,
   useNavigation,
   useRoute,
   type RouteProp,
@@ -17,6 +18,8 @@ import {useChatStore, type Message} from '../store/chat.store';
 import {launchImageLibrary} from 'react-native-image-picker';
 import {useAuthStore} from '../store/auth.store';
 import ChatHeader from '../components/ChatHeader';
+import RNFS from 'react-native-fs';
+import {io} from 'socket.io-client';
 
 type RootStackParamList = {
   ChatScreen: {chatId: number; contact: {name: string; lastName: string}};
@@ -27,7 +30,7 @@ type ChatScreenRouteProp = RouteProp<RootStackParamList, 'ChatScreen'>;
 export const ChatScreen = () => {
   const route = useRoute<ChatScreenRouteProp>();
   const {chatId} = route.params;
-  const {chat, getMessages, addMessage} = useChatStore();
+  const {chat, getMessages, postMessage, updateChat} = useChatStore();
   const {user} = useAuthStore();
   const [messageText, setMessageText] = useState('');
   const [attachment, setAttachment] = useState<{
@@ -36,24 +39,38 @@ export const ChatScreen = () => {
   } | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const navigation = useNavigation();
+  const socketRef = useRef<ReturnType<typeof io> | null>(null);
 
-  useEffect(() => {
+  useFocusEffect(() => {
     getMessages(chatId, user!.id);
     setHeader();
-  }, [chat, chatId, navigation, route.params.contact]);
+  });
 
-  // useEffect(() => {
-  // Simular recepción de mensajes cada 10 segundos
-  // const interval = setInterval(() => {
-  //   const newMessage: Message = {
-  //     sender: contactInfo?.name || '',
-  //     content: `Mensaje automático ${Date.now()}`,
-  //     time: new Date().toLocaleTimeString(),
-  //   };
-  //   addMessage(contactId, newMessage);
-  // }, 10000);
-  //   return () => clearInterval(interval);
-  // }, [contactId, addMessage, contactInfo]);
+  useEffect(() => {
+    handleSocket();
+
+    return () => {
+      if (!socketRef.current?.connected) {
+        socketRef.current?.connect();
+      }
+    };
+  }, []);
+
+  const handleSocket = async () => {
+    if (!socketRef.current) {
+      socketRef.current = io('http://localhost:8080');
+
+      socketRef.current.on('connect', () => {
+        socketRef.current?.emit('join', chatId);
+      });
+
+      socketRef.current.on('message', received => {
+        if (received.chatId === chatId) {
+          updateChat(received);
+        }
+      });
+    }
+  };
 
   const setHeader = () => {
     if (chat) {
@@ -72,32 +89,78 @@ export const ChatScreen = () => {
 
   const handleSend = () => {
     if (messageText.trim() || attachment) {
-      const newMessage: Message = {
-        sender: 'You',
+      const body: any = {
+        chatId: chatId,
+        senderId: user!.id,
         content: messageText.trim(),
-        time: new Date().toLocaleTimeString(),
-        attachment: attachment || undefined,
       };
-      // addMessage(contactId, newMessage);
+
+      if (attachment) {
+        body.content += `\n[${attachment.type}]\n${attachment.url}`;
+      }
+
+      postMessage(body);
+
+      if (messageText.trim().length > 0) {
+        socketRef.current?.emit('message', {
+          chatId,
+          message: {
+            sender: user!.name,
+            content: messageText.trim(),
+            time: new Date().toLocaleTimeString([], {
+              hour: 'numeric',
+              minute: 'numeric',
+            }),
+          },
+        });
+      }
+
       setMessageText('');
       setAttachment(null);
     }
   };
 
-  const handleAttachment = () => {
-    launchImageLibrary({mediaType: 'mixed'}, response => {
+  const handleAttachment = async () => {
+    launchImageLibrary({mediaType: 'mixed'}, async response => {
       if (response.assets && response.assets.length > 0) {
         const asset = response.assets[0];
-        setAttachment({
-          type: asset.type?.startsWith('image/') ? 'image' : 'file',
-          url: asset.uri || '',
-        });
+
+        if (asset.uri) {
+          try {
+            // Convierte el archivo a Base64
+            const base64 = await RNFS.readFile(asset.uri, 'base64');
+            setAttachment({
+              type: asset.type?.startsWith('image/') ? 'image' : 'file',
+              url: base64, // Guarda el contenido Base64 aquí
+            });
+          } catch (error) {
+            console.error('Error al convertir a Base64:', error);
+          }
+        }
       }
     });
   };
 
   const renderMessage = ({item}: {item: Message}) => {
     const isCurrentUser = item.sender === 'You';
+
+    // Separar el contenido de los adjuntos (si están en el texto)
+    const contentParts = item.content.split('\n'); // Dividimos por líneas
+    const textContent = contentParts.filter(line => !line.startsWith('['));
+    const attachmentLine = contentParts.find(line => line.startsWith('['));
+
+    // Determinar tipo de adjunto
+    let attachmentType = null;
+    let attachmentUrl = null;
+
+    if (attachmentLine) {
+      const match = attachmentLine.match(/\[(image|file)]\n(.+)/); // Busca el tipo y la URL
+      if (match) {
+        attachmentType = match[1]; // 'image' o 'file'
+        attachmentUrl = match[2]; // URL o Base64
+      }
+    }
+
     return (
       <View
         style={[
@@ -121,18 +184,26 @@ export const ChatScreen = () => {
               ]}>
               {item.sender}
             </Text>
-            <Text style={{color: 'white'}}>{item.content}</Text>
-            {item.attachment && (
+
+            {/* Mostrar texto del mensaje si existe */}
+            {textContent.length > 0 && (
+              <Text style={{color: 'white'}}>{textContent.join('\n')}</Text>
+            )}
+
+            {attachmentType && attachmentUrl && (
               <View style={styles.attachmentContainer}>
                 <IconButton
-                  icon={
-                    item.attachment.type === 'image' ? 'image' : 'file-document'
-                  }
+                  icon={attachmentType === 'image' ? 'image' : 'file-document'}
                   size={40}
                   iconColor="#000"
+                  onPress={() => {
+                    // Agregar lógica para abrir/ver archivo adjunto
+                    console.log('Abrir adjunto:', attachmentUrl);
+                  }}
                 />
               </View>
             )}
+
             <Text style={styles.timestamp}>{item.time}</Text>
           </Card.Content>
         </Card>

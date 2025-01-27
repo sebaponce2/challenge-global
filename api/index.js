@@ -4,9 +4,16 @@ import userRoutes from "./routes/userRoutes.js";
 import cors from "cors";
 import bodyParser from "body-parser";
 import http from "http";
+import { Server as SocketServer } from "socket.io";
 
 const app = express();
 const server = http.createServer(app);
+
+const io = new SocketServer(server , {
+  cors: {
+    origin: "*",
+  },  
+});
 
 // Conectar a la base de datos
 connectDB();
@@ -30,6 +37,16 @@ sequelize
 
 // Rutas
 app.use("/api", userRoutes);
+
+// Configuración de WebSocket con socket.io
+io.on("connection", (socket) => {
+  console.log('client connected');
+
+  socket.on("message", (data) => {
+    socket.broadcast.emit("message", data);
+  });
+  
+});
 
 // Configuración del puerto
 const PORT = process.env.PORT || 8080;

@@ -1,6 +1,8 @@
 import {client} from './clients';
 
-export const getChatListClient = async (userId: number): Promise<ChatList[]> => {
+export const getChatListClient = async (
+  userId: number,
+): Promise<ChatList[]> => {
   try {
     const {data} = await client.get('/getChatList', {
       params: {userId},
@@ -11,7 +13,10 @@ export const getChatListClient = async (userId: number): Promise<ChatList[]> => 
   }
 };
 
-export const getChatMessagesClient = async (chatId: number, userId: number): Promise<SpecificChat> => {
+export const getChatMessagesClient = async (
+  chatId: number,
+  userId: number,
+): Promise<SpecificChat> => {
   try {
     const {data} = await client.get('/getChatMessages', {
       params: {chatId, userId},
@@ -20,4 +25,12 @@ export const getChatMessagesClient = async (chatId: number, userId: number): Pro
   } catch (error) {
     throw error;
   }
-}
+};
+
+export const createNewMessageClient = async (body: any): Promise<void> => {
+  try {
+    await client.post('/createNewMessage', body);
+  } catch (error) {
+    throw error;
+  }
+};
