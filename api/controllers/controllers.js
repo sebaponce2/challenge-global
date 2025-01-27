@@ -194,7 +194,7 @@ export const updateUserData = async (req, res) => {
     phone: body.phone,
     status_id: body.status === 'Online' ? 1 : 2,
     photo: body.photo,
-    last_seen: body.last_seen,
+    last_seen: body.status === 'Offline' ? new Date() : body.last_seen,
     date_of_birth: body.date_of_birth,
   };
 
