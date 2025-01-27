@@ -60,7 +60,7 @@ export const Profile = sequelize.define(
       allowNull: true,
     },
     photo: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     last_seen: {
