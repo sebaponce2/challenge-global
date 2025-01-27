@@ -1,7 +1,15 @@
+DROP DATABASE IF EXISTS challenge_global;
+
+CREATE DATABASE challenge_global;
+
+DROP TABLE IF EXISTS status CASCADE;
+
 CREATE TABLE status (
     id SERIAL PRIMARY KEY,
     value TEXT NOT NULL
 );
+
+DROP TABLE IF EXISTS profiles CASCADE;
 
 CREATE TABLE profiles (
     id SERIAL PRIMARY KEY,
@@ -15,11 +23,15 @@ CREATE TABLE profiles (
     last_seen TIMESTAMP
 );
 
+DROP TABLE IF EXISTS chats CASCADE;
+
 CREATE TABLE chats (
     id SERIAL PRIMARY KEY,
     first_user_id INTEGER REFERENCES profiles (id) NOT NULL,
     second_user_id INTEGER REFERENCES profiles (id) NOT NULL
 );
+
+DROP TABLE IF EXISTS messages CASCADE;
 
 CREATE TABLE messages (
     id SERIAL PRIMARY KEY,
