@@ -1,11 +1,11 @@
 interface User {
   id: number;
   name?: string | null;
-  lastName?: string | null;
+  last_name?: string | null;
   email?: string;
-  dateOfBirth?: string | null;
+  date_of_birth?: string | null;
   phone?: string;
   photo?: string;
   status?: string;
-  lastSeen?: string;
+  last_seen?: string;
 }

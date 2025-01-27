@@ -10,3 +10,14 @@ export const getUserLoginClient = async (email: string): Promise<User> => {
     throw error;
   }
 };
+
+export const updateUserDataClient = async (body: any): Promise<User> => {
+  try {
+    const {data} = await client.put('/updateUserData', {
+      body: body,
+    });
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};

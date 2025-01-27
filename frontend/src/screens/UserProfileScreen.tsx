@@ -1,56 +1,52 @@
-import type React from 'react';
-import { useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
-  ScrollView,
-} from 'react-native';
-import {
-  TextInput,
-  Button,
-  Text,
-  Avatar,
-  Switch,
-  Menu,
-  IconButton,
-} from 'react-native-paper';
+import React, { useState } from 'react';
+import { View, StyleSheet, Image, TouchableOpacity, ScrollView, Modal, FlatList } from 'react-native';
+import { TextInput, Button, Text, Avatar, IconButton } from 'react-native-paper';
 import { launchImageLibrary } from 'react-native-image-picker';
-import { useUserStore, type UserProfile } from '../store/user.store';
+import { useAuthStore } from '../store/auth.store';
+import RNFS from 'react-native-fs';
 
 export const UserProfileScreen = () => {
-  const { profile, updateProfile, setStatus } = useUserStore();
+  const { updateUser } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
-  const [tempProfile, setTempProfile] = useState<UserProfile>(profile);
   const [menuVisible, setMenuVisible] = useState(false);
+  const { user } = useAuthStore();
+  const [body, setBody] = useState<any>(user!);
+  const [statusOptions] = useState(['Online', 'Offline']);
 
-  const handleEditToggle = () => {
+  const handleSaveChanges = () => {
     if (isEditing) {
-      updateProfile(tempProfile);
+      updateUser({...body!, userId: user!.id!});
     }
     setIsEditing(!isEditing);
   };
 
   const handleAvatarChange = () => {
-    launchImageLibrary({ mediaType: 'photo' }, (response) => {
+    launchImageLibrary({ mediaType: 'photo' }, async response => {
       if (response.assets && response.assets.length > 0) {
-        const newAvatar = response.assets[0].uri;
-        setTempProfile({ ...tempProfile, avatar: newAvatar || null });
+        const uri = response.assets[0].uri;
+
+        try {
+          const base64Image = await RNFS.readFile(uri!, 'base64');
+          setBody({ ...body!, photo: `data:image/jpeg;base64,${base64Image}` });
+          console.log('photo:', base64Image);
+          
+        } catch (error) {
+          console.error('Error al convertir la imagen a base64:', error);
+        }
       }
     });
   };
 
   const renderAvatar = () => {
-    if (tempProfile.avatar) {
-      return <Image source={{ uri: tempProfile.avatar }} style={styles.avatar} />;
+    if (body!.photo) {
+      return <Image source={{ uri: body!.photo }} style={styles.avatar} />;
     }
-    return (
-      <Avatar.Text
-        size={100}
-        label={tempProfile.username.substring(0, 2).toUpperCase()}
-      />
-    );
+    return <Avatar.Text size={100} label={body!.name!.substring(0, 2).toUpperCase()} />;
+  };
+
+  const handleStatusChange = (status: string) => {
+    setBody({ ...body!, status });
+    setMenuVisible(false);
   };
 
   return (
@@ -60,13 +56,7 @@ export const UserProfileScreen = () => {
           {renderAvatar()}
           {isEditing && (
             <View style={styles.editAvatarIcon}>
-              <IconButton
-                icon="camera"
-                size={24}
-                iconColor="#fff"
-                style={styles.cameraIcon}
-                onPress={handleAvatarChange}
-              />
+              <IconButton icon="camera" size={24} iconColor="#fff" style={styles.cameraIcon} onPress={handleAvatarChange} />
             </View>
           )}
         </TouchableOpacity>
@@ -74,67 +64,58 @@ export const UserProfileScreen = () => {
 
       <View style={styles.content}>
         <TextInput
-          label="Nombre de usuario"
-          value={tempProfile.username}
-          onChangeText={(text) =>
-            setTempProfile({ ...tempProfile, username: text })
-          }
+          label="Nombre"
+          value={body!.name!}
+          onChangeText={text => setBody({ ...body!, name: text })}
           disabled={!isEditing}
           style={styles.input}
         />
-
+        <TextInput
+          label="Apellido"
+          value={body!.last_name!}
+          onChangeText={text => setBody({ ...body!, last_name: text })}
+          disabled={!isEditing}
+          style={styles.input}
+        />
         <TextInput
           label="Email"
-          value={tempProfile.email}
-          onChangeText={(text) => setTempProfile({ ...tempProfile, email: text })}
+          value={body!.email}
+          onChangeText={text => setBody({ ...body!, email: text })}
           disabled={!isEditing}
           style={styles.input}
         />
-
+        <TextInput
+          label="Telefono"
+          value={body!.phone}
+          onChangeText={text => setBody({ ...body!, phone: text })}
+          disabled={!isEditing}
+          style={styles.input}
+        />
         <View style={styles.statusContainer}>
           <Text>Estado de conexión:</Text>
-          <Menu
-            visible={menuVisible}
-            onDismiss={() => setMenuVisible(false)}
-            anchor={
-              <Button onPress={() => setMenuVisible(true)}>
-                {tempProfile.status.charAt(0).toUpperCase() +
-                  tempProfile.status.slice(1)}
-              </Button>
-            }
-          >
-            <Menu.Item
-              onPress={() => {
-                setStatus('online');
-                setTempProfile({ ...tempProfile, status: 'online' });
-                setMenuVisible(false);
-              }}
-              title="Online"
-            />
-            <Menu.Item
-              onPress={() => {
-                setStatus('offline');
-                setTempProfile({ ...tempProfile, status: 'offline' });
-                setMenuVisible(false);
-              }}
-              title="Offline"
-            />
-            <Menu.Item
-              onPress={() => {
-                setStatus('away');
-                setTempProfile({ ...tempProfile, status: 'away' });
-                setMenuVisible(false);
-              }}
-              title="Away"
-            />
-          </Menu>
+          <TouchableOpacity onPress={() => setMenuVisible(true)} disabled={!isEditing}>
+            <Button>{body!.status}</Button>
+          </TouchableOpacity>
         </View>
 
-        <Button
-          mode="contained"
-          onPress={handleEditToggle}
-          style={styles.editButton}
-        >
+        {/* Dropdown Menu */}
+        <Modal visible={menuVisible} transparent={true} animationType="fade" onRequestClose={() => setMenuVisible(false)}>
+          <TouchableOpacity style={styles.modalOverlay} onPress={() => setMenuVisible(false)}>
+            <View style={styles.dropdown}>
+              <FlatList
+                data={statusOptions}
+                renderItem={({ item }) => (
+                  <TouchableOpacity style={styles.dropdownItem} onPress={() => handleStatusChange(item)}>
+                    <Text>{item}</Text>
+                  </TouchableOpacity>
+                )}
+                keyExtractor={(item) => item}
+              />
+            </View>
+          </TouchableOpacity>
+        </Modal>
+
+        <Button mode="contained" onPress={handleSaveChanges} style={styles.editButton}>
           {isEditing ? 'Guardar cambios' : 'Editar perfil'}
         </Button>
       </View>
@@ -182,5 +163,21 @@ const styles = StyleSheet.create({
   },
   editButton: {
     marginTop: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  dropdown: {
+    backgroundColor: 'white',
+    padding: 10,
+    borderRadius: 5,
+    width: 200,
+  },
+  dropdownItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
   },
 });

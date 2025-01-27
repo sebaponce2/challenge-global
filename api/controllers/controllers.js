@@ -3,6 +3,7 @@ import { USER_NOT_FOUND } from "../constants/enums.js";
 import { Chat, Message, Profile, Status } from "../models/models.js";
 import { getTimeAgo } from "../utils/time.js";
 
+
 export const getUserLogin = async (req, res) => {
   const { email } = req.query;
 
@@ -11,6 +12,12 @@ export const getUserLogin = async (req, res) => {
       where: {
         email: email,
       },
+      include: [
+        {
+          model: Status,
+          attributes: ["value"], // Incluye solo el campo "value" de Status
+        },
+      ],
     });
 
     if (!user) {
@@ -19,7 +26,13 @@ export const getUserLogin = async (req, res) => {
       });
     }
 
-    res.status(200).json(user);
+    // Construir la respuesta incluyendo el campo "status"
+    const response = {
+      ...user.dataValues,
+      status: user.status?.value || null, // Agregar el campo "status" con el valor de Status o null si no existe
+    };
+
+    res.status(200).json(response);
   } catch (error) {
     res.status(500).json({
       message: "Error al recuperar el usuario",
@@ -170,3 +183,34 @@ export const createNewMessage = async (req, res) => {
     res.status(500).json({ message: "Error al crear el mensaje", error });
   }
 };
+
+export const updateUserData = async (req, res) => {
+  const { body } = req.body;
+
+  const bodyProfile = {
+    name: body?.name,
+    last_name: body.last_name,
+    email: body.email,
+    phone: body.phone,
+    status_id: body.status === 'Online' ? 1 : 2,
+    photo: body.photo,
+    last_seen: body.last_seen,
+    date_of_birth: body.date_of_birth,
+  };
+
+  try {
+    const user = await Profile.update(bodyProfile, {
+      where: {
+        id: body.userId,
+      },
+    });
+    res.status(200).json(user);
+  } catch (error) {
+    console.log('error', error);
+    
+    res.status(500).json({
+      message: "Error al actualizar el usuario",
+      error,
+    });
+  }
+}

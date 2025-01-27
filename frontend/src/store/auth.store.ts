@@ -1,9 +1,10 @@
 import {create, StateCreator} from 'zustand';
-import {getUserLoginClient} from '../services/user';
+import {getUserLoginClient, updateUserDataClient} from '../services/user';
 
 interface AuthState {
   user: User | null;
   login: (email: string) => void;
+  updateUser: (user: User) => void;
   logout: () => void;
 }
 
@@ -18,6 +19,17 @@ const storeApi: StateCreator<AuthState> = set => ({
       }
     } catch (error) {
       throw error;
+    }
+  },
+  async updateUser(body: any) {
+    try {
+      await updateUserDataClient(body);
+      set({user: body});
+    } catch (error) {
+      console.log(
+        'Se produjo un error al actualizar el perfil del usuario',
+        error,
+      );
     }
   },
   logout: () => set({user: null}),
