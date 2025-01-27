@@ -4,7 +4,8 @@ import {View, StyleSheet, FlatList} from 'react-native';
 import {List, Text, Divider} from 'react-native-paper';
 import {useNavigation} from '@react-navigation/native';
 import type {StackNavigationProp} from '@react-navigation/stack';
-import {useChatListStore, type Chat} from '../store/chatList.store';
+import {useChatListStore} from '../store/chatList.store';
+import {useAuthStore} from '../store/auth.store';
 
 type RootStackParamList = {
   ChatList: undefined;
@@ -18,56 +19,24 @@ type ChatListScreenNavigationProp = StackNavigationProp<
 
 export const ChatListScreen = () => {
   const navigation = useNavigation<ChatListScreenNavigationProp>();
-  const {chats, setChats} = useChatListStore();
+  const {getChats, chats} = useChatListStore();
+  const {user} = useAuthStore();
 
   useEffect(() => {
-    // Usar los mocks proporcionados
-    const mockChats: Chat[] = [
-      {
-        id: 1,
-        contact: {
-          name: 'John',
-          lastName: 'Gonzales',
-          id: '123456',
-        },
-        lastMessage: 'Hey, how are you?',
-        lastMessageTime: '10:00 AM',
-      },
-      {
-        id: 2,
-        contact: {
-          name: 'Maria',
-          lastName: 'Lopez',
-          id: '1234567',
-        },
-        lastMessage: 'Do you want to go out tonight?',
-        lastMessageTime: 'yesterday',
-      },
-      {
-        id: 3,
-        contact: {
-          name: 'Peter',
-          lastName: 'Sanchez',
-          id: '12345678',
-        },
-        lastMessage: "I'll be late for the meeting",
-        lastMessageTime: '2 hours ago',
-      },
-    ];
-    setChats(mockChats);
-  }, [setChats]);
+    getChats(user!.id);
+  }, []);
 
   const handleChatPress = (chatId: number) => {
     navigation.navigate('Chat', {chatId});
   };
 
-  const renderChatItem = ({item}: {item: Chat}) => (
+  const renderChatItem = ({item}: {item: ChatList}) => (
     <List.Item
       title={`${item.contact.name} ${item.contact.lastName}`}
       description={item.lastMessage}
       left={props => <List.Icon {...props} icon="account" />}
       right={() => <Text style={styles.time}>{item.lastMessageTime}</Text>}
-      onPress={() => handleChatPress(1)}
+      onPress={() => handleChatPress(item.id)}
     />
   );
 

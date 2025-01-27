@@ -1,8 +1,8 @@
 import {create, StateCreator} from 'zustand';
+import {getUserLoginClient} from '../services/user';
 
 interface AuthState {
-  isAuthenticated: boolean;
-  user: string | null;
+  user: User | null;
   login: (email: string) => void;
   logout: () => void;
 }
@@ -10,8 +10,17 @@ interface AuthState {
 const storeApi: StateCreator<AuthState> = set => ({
   isAuthenticated: false,
   user: null,
-  login: (email: string) => set({isAuthenticated: true, user: email}),
-  logout: () => set({isAuthenticated: false, user: null}),
+  async login(email: string) {
+    try {
+      const data = await getUserLoginClient(email);
+      if (data) {
+        set({user: data});
+      }
+    } catch (error) {
+      throw error;
+    }
+  },
+  logout: () => set({user: null}),
 });
 
 export const useAuthStore = create<AuthState>()(storeApi);

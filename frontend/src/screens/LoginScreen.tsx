@@ -1,52 +1,63 @@
-import type React from "react"
-import { useState } from "react"
-import { View, StyleSheet } from "react-native"
-import { TextInput, Button, Text, HelperText } from "react-native-paper"
-import { useNavigation } from "@react-navigation/native"
-import type { StackNavigationProp } from "@react-navigation/stack"
-import { useAuthStore } from "../store/auth.store"
-import { validateEmail, validatePassword } from "../utils/validations"
+import type React from 'react';
+import {useState} from 'react';
+import {View, StyleSheet} from 'react-native';
+import {TextInput, Button, Text, HelperText} from 'react-native-paper';
+import {useAuthStore} from '../store/auth.store';
+import {validateEmail, validatePassword} from '../utils/validations';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {useNavigation} from '@react-navigation/native';
 
 type RootStackParamList = {
-  Login: undefined
-  TabNavigator: { screen: "ChatList" }
-}
-
-type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, "Login">
+  Login: undefined;
+  TabNavigator: {screen: 'ChatList'};
+};
 
 export const LoginScreen = () => {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [emailError, setEmailError] = useState("")
-  const [passwordError, setPasswordError] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const navigation = useNavigation<LoginScreenNavigationProp>()
-  const login = useAuthStore((state) => state.login)
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const login = useAuthStore(state => state.login);
 
-  const handleLogin = () => {
-    let isValid = true
+  type LoginScreenNavigationProp = StackNavigationProp<
+    RootStackParamList,
+    'Login'
+  >;
+  const navigation = useNavigation<LoginScreenNavigationProp>();
 
+  const handleLogin = async () => {
+    let isValid = true;
+
+    // Validaciones del formulario
     if (!validateEmail(email)) {
-      setEmailError("Por favor, ingrese un email válido")
-      isValid = false
+      setEmailError('Por favor, ingrese un email válido');
+      isValid = false;
     } else {
-      setEmailError("")
+      setEmailError('');
     }
 
     if (!validatePassword(password)) {
-      setPasswordError("La contraseña debe tener al menos 8 caracteres, 1 mayúscula, 1 minúscula y 1 número")
-      isValid = false
+      setPasswordError(
+        'La contraseña debe tener al menos 8 caracteres, 1 mayúscula, 1 minúscula y 1 número',
+      );
+      isValid = false;
     } else {
-      setPasswordError("")
+      setPasswordError('');
     }
 
     if (isValid) {
-      login(email)
-      navigation.navigate("TabNavigator", {
-        screen: "ChatList"
-      })
+      try {
+        await login(email);
+        navigation.navigate('TabNavigator', {
+          screen: 'ChatList',
+        });
+      } catch (error) {
+        isValid = false;
+        setEmailError('Usuario no encontrado');
+      }
     }
-  }
+  };
 
   return (
     <View style={styles.container}>
@@ -73,7 +84,10 @@ export const LoginScreen = () => {
         error={!!passwordError}
         style={styles.input}
         right={
-          <TextInput.Icon icon={showPassword ? "eye-off" : "eye"} onPress={() => setShowPassword(!showPassword)} />
+          <TextInput.Icon
+            icon={showPassword ? 'eye-off' : 'eye'}
+            onPress={() => setShowPassword(!showPassword)}
+          />
         }
       />
       <HelperText type="error" visible={!!passwordError}>
@@ -83,19 +97,19 @@ export const LoginScreen = () => {
         Iniciar Sesión
       </Button>
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: 'center',
     padding: 20,
   },
   title: {
     fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "center",
+    fontWeight: 'bold',
+    textAlign: 'center',
     marginBottom: 20,
   },
   input: {
@@ -104,5 +118,4 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 20,
   },
-})
-
+});
