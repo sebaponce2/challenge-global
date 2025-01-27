@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import {TextInput, Button, Text, Card, IconButton} from 'react-native-paper';
 import {
+  useFocusEffect,
   useNavigation,
   useRoute,
   type RouteProp,
@@ -47,9 +48,14 @@ export const ChatScreen = () => {
   const navigation = useNavigation();
   const socketRef = useRef<ReturnType<typeof io> | null>(null);
 
+  useFocusEffect(()=> {
+    console.log('ejecuta');
+    
+    setHeader();
+  });
+
   useEffect(() => {
     getMessages(chatId, user!.id);
-    setHeader();
   }, []);
 
   useEffect(() => {
