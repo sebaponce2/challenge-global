@@ -22,4 +22,6 @@ interface SpecificChatMessage {
 interface SpecificChat {
   contactId: number;
   messages?: SpecificChatMessage[] | [];
+  lastSeen: string;
+  status: string;
 }

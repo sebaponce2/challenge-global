@@ -8,10 +8,15 @@ import {
   Platform,
 } from 'react-native';
 import {TextInput, Button, Text, Card, IconButton} from 'react-native-paper';
-import {useRoute, type RouteProp} from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from '@react-navigation/native';
 import {useChatStore, type Message} from '../store/chat.store';
 import {launchImageLibrary} from 'react-native-image-picker';
 import {useAuthStore} from '../store/auth.store';
+import ChatHeader from '../components/ChatHeader';
 
 type RootStackParamList = {
   ChatScreen: {chatId: number; contact: {name: string; lastName: string}};
@@ -30,24 +35,40 @@ export const ChatScreen = () => {
     url: string;
   } | null>(null);
   const flatListRef = useRef<FlatList>(null);
+  const navigation = useNavigation();
 
   useEffect(() => {
     getMessages(chatId, user!.id);
-  }, []);
+    setHeader();
+  }, [chat, chatId, navigation, route.params.contact]);
 
   // useEffect(() => {
-  //   // Simular recepción de mensajes cada 10 segundos
-  //   // const interval = setInterval(() => {
-  //   //   const newMessage: Message = {
-  //   //     sender: contactInfo?.name || '',
-  //   //     content: `Mensaje automático ${Date.now()}`,
-  //   //     time: new Date().toLocaleTimeString(),
-  //   //   };
-  //   //   addMessage(contactId, newMessage);
-  //   // }, 10000);
-
+  // Simular recepción de mensajes cada 10 segundos
+  // const interval = setInterval(() => {
+  //   const newMessage: Message = {
+  //     sender: contactInfo?.name || '',
+  //     content: `Mensaje automático ${Date.now()}`,
+  //     time: new Date().toLocaleTimeString(),
+  //   };
+  //   addMessage(contactId, newMessage);
+  // }, 10000);
   //   return () => clearInterval(interval);
   // }, [contactId, addMessage, contactInfo]);
+
+  const setHeader = () => {
+    if (chat) {
+      navigation.setOptions({
+        headerTitle: () => (
+          <ChatHeader
+            name={route.params.contact?.name}
+            lastName={route.params.contact?.lastName}
+            userStatus={chat?.status ?? ''}
+            lastMessageTime={chat?.lastSeen ?? ''}
+          />
+        ),
+      });
+    }
+  };
 
   const handleSend = () => {
     if (messageText.trim() || attachment) {
@@ -85,7 +106,21 @@ export const ChatScreen = () => {
         ]}>
         <Card
           style={isCurrentUser ? styles.currentUserCard : styles.otherUserCard}>
-          <Card.Content>
+          <Card.Content
+            style={{
+              paddingBottom: 8,
+              paddingTop: 8,
+              paddingHorizontal: 12,
+            }}>
+            <Text
+              style={[
+                {color: 'white', marginBottom: 4, fontWeight: 'bold'},
+                isCurrentUser
+                  ? {alignSelf: 'flex-end'}
+                  : {alignSelf: 'flex-start'},
+              ]}>
+              {item.sender}
+            </Text>
             <Text style={{color: 'white'}}>{item.content}</Text>
             {item.attachment && (
               <View style={styles.attachmentContainer}>
@@ -197,6 +232,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: 'white',
     alignSelf: 'flex-end',
+    marginTop: 3,
   },
   inputContainer: {
     flexDirection: 'row',

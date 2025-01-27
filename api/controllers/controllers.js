@@ -1,6 +1,7 @@
 import { Op } from "sequelize";
 import { USER_NOT_FOUND } from "../constants/enums.js";
-import { Chat, Message, Profile } from "../models/models.js";
+import { Chat, Message, Profile, Status } from "../models/models.js";
+import { getTimeAgo } from "../utils/time.js";
 
 export const getUserLogin = async (req, res) => {
   const { email } = req.query;
@@ -99,7 +100,7 @@ export const getChatMessages = async (req, res) => {
       include: [
         {
           model: Profile,
-          as: "sender", 
+          as: "sender",
           attributes: ["id", "name", "last_name"],
         },
       ],
@@ -115,27 +116,37 @@ export const getChatMessages = async (req, res) => {
         ? chat.second_user_id
         : chat.first_user_id;
 
+    const contactProfile = await Profile.findOne({
+      where: { id: contactId },
+      attributes: ["id", "last_seen", "status_id"],
+      include: [
+        {
+          model: Status,
+          attributes: ["value"], 
+        },
+      ],
+    });
+
     const formattedMessages = messages.map((message) => ({
       sender:
-        message.sender.id === Number(userId)
-          ? "You"
-          : message.sender.name,
+      message.sender.id === Number(userId) ? "You" : message.sender.name,
       content: message.content,
       time: message.time.toLocaleTimeString([], {
         hour: "numeric",
         minute: "numeric",
       }),
     }));
+    const formattedLastSeen = getTimeAgo(contactProfile.last_seen);
 
     const response = {
       contactId: contactId.toString(),
+      status: contactProfile.status.value,
+      lastSeen: `Last seen: ${formattedLastSeen}`, 
       messages: formattedMessages,
     };
 
     res.status(200).json(response);
   } catch (error) {
-    console.log("error:", error);
-
     res.status(500).json({
       message: "Error al recuperar los mensajes",
       error,
