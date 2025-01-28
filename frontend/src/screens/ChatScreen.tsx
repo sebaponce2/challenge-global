@@ -49,11 +49,9 @@ export const ChatScreen = () => {
   const socketRef = useRef<ReturnType<typeof io> | null>(null);
 
   useFocusEffect(()=> {
-    console.log('ejecuta');
-    
     setHeader();
   });
-
+  
   useEffect(() => {
     getMessages(chatId, user!.id);
   }, []);
@@ -62,9 +60,7 @@ export const ChatScreen = () => {
     handleSocket();
 
     return () => {
-      if (!socketRef.current?.connected) {
-        socketRef.current?.connect();
-      }
+      socketRef.current?.off("message");
     };
   }, []);
 
@@ -77,7 +73,9 @@ export const ChatScreen = () => {
       });
 
       socketRef.current.on('message', received => {
-        if (received.chatId === chatId) {
+        if (received.chatId === chatId && received.sender !== user!.name){
+          
+          console.log('recieved:', received);
           updateChat(received);
         }
       });
